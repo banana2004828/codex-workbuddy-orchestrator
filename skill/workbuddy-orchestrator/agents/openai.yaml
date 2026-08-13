@@ -1,0 +1,4 @@
+interface:
+  display_name: "WorkBuddy Orchestrator"
+  short_description: "Dispatch WorkBuddy tasks and verify evidence"
+  default_prompt: "Use $workbuddy-orchestrator to delegate a bounded task to WorkBuddy and independently verify its evidence."

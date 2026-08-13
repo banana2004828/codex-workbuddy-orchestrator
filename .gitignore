@@ -1,0 +1,6 @@
+node_modules/
+*.log
+workers.local.json
+test-fixtures/
+.workbuddy-orchestrator/
+dist/

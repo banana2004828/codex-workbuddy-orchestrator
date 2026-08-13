@@ -1,0 +1,16 @@
+{
+  "name": "codex-workbuddy-orchestrator",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Portable Codex skill and installer for bounded, evidence-checked WorkBuddy dispatch.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "validate-skill": "node scripts/validate-skill.mjs",
+    "install": "node bootstrap.mjs install",
+    "package": "node scripts/package.mjs"
+  }
+}
