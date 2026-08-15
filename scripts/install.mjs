@@ -27,6 +27,24 @@ const repositoryRoot = path.resolve(installerDirectory, "..");
 const defaultTarget = path.join(os.homedir(), ".codex", "skills", "workbuddy-orchestrator");
 const defaultConfigPath = path.join(os.homedir(), ".codex", "workbuddy-orchestrator", "workers.json");
 
+function defaultRouterConfig() {
+  return {
+    version: 2,
+    defaultMode: "auto",
+    workbuddy: {
+      priorityWhileEntitlementHealthy: true,
+      entitlementHealthy: true,
+      model: "auto",
+      balanceVisibility: "per-run-consumption-only",
+      paidSubscriptionAllowed: false,
+    },
+    deepseek: { provider: "deepseek-official", model: "deepseek-v4-pro", reasoningEffort: "max" },
+    qwenVision: { provider: "aliyun-qwen", model: "qwen3.7-plus", role: "visual-observation-only" },
+    spark: { agentType: "spark_worker" },
+    luna: { agentType: "luna_worker" },
+  };
+}
+
 async function exists(filePath) {
   try {
     await access(filePath);
@@ -274,6 +292,46 @@ async function writeOptionalSolLuna(sourceSkill, target) {
   return { destination, existingAgents: (await exists(existingAgents)) ? existingAgents : null };
 }
 
+/** Install the optional native child-agent templates and standalone router Skill. */
+export async function installAgentKit(options = {}) {
+  const sourceRoot = path.resolve(options.sourceRoot ?? repositoryRoot);
+  const home = path.resolve(options.home ?? os.homedir());
+  const agentsDir = path.resolve(options.agentsDir ?? path.join(home, ".codex", "agents"));
+  const routerTarget = path.resolve(options.routerTarget ?? path.join(home, ".codex", "skills", "multi-agent-router"));
+  const routerConfigPath = path.resolve(options.routerConfigPath ?? path.join(home, ".codex", "multi-agent-router.json"));
+  const routerSource = path.join(sourceRoot, "skill", "multi-agent-router");
+  const templates = path.join(sourceRoot, "agent-templates");
+  for (const required of [
+    path.join(routerSource, "SKILL.md"),
+    path.join(templates, "spark-worker.toml"),
+    path.join(templates, "luna-worker.toml"),
+  ]) {
+    if (!(await exists(required))) throw new Error(`Agent-kit source is missing: ${required}`);
+  }
+
+  const targets = [
+    { name: "router", source: routerSource, target: routerTarget, directory: true },
+    { name: "spark", source: path.join(templates, "spark-worker.toml"), target: path.join(agentsDir, "spark-worker.toml"), directory: false },
+    { name: "luna", source: path.join(templates, "luna-worker.toml"), target: path.join(agentsDir, "luna-worker.toml"), directory: false },
+  ];
+  const installed = {};
+  for (const item of targets) {
+    const backupPath = await backupTarget(item.target);
+    await mkdir(path.dirname(item.target), { recursive: true });
+    await cp(item.source, item.target, { recursive: item.directory, force: false, errorOnExist: true });
+    installed[item.name] = { target: item.target, backupPath };
+  }
+  const configBackupPath = await backupTarget(routerConfigPath);
+  await writePrivateJson(routerConfigPath, defaultRouterConfig());
+  return {
+    installed,
+    routerConfigPath,
+    configBackupPath,
+    defaultMode: "auto",
+    restartRequired: true,
+  };
+}
+
 function smokeSpec() {
   return {
     title: "WorkBuddy installer proof smoke",
@@ -424,7 +482,7 @@ export async function runSmoke({ target, configPath, timeoutMs = 120000, pollMs 
 function cliParse(argv) {
   const command = argv[0] ?? "install";
   const options = {};
-  const booleans = new Set(["skip-smoke", "enable-sol-luna", "help"]);
+  const booleans = new Set(["skip-smoke", "enable-sol-luna", "enable-agent-kit", "help"]);
   for (let index = 1; index < argv.length; index += 1) {
     const token = argv[index];
     if (!token.startsWith("--")) throw new Error(`Unexpected argument: ${token}`);
@@ -478,6 +536,11 @@ export async function install(options = {}) {
   const smoke = options.skipSmoke
     ? { status: "skipped", passed: false, accepted: false, reason: "--skip-smoke was explicitly supplied" }
     : await runSmoke({ target, configPath, timeoutMs: options.smokeTimeoutMs ?? 120000, pollMs: options.smokePollMs ?? 250, smokeRoot: options.smokeRoot });
+  const agentKit = options.enableAgentKit && smoke.status !== "failed"
+    ? await installAgentKit({ sourceRoot, home: options.home ?? os.homedir() })
+    : options.enableAgentKit
+      ? { status: "not-installed", reason: "WorkBuddy smoke failed" }
+      : null;
   return {
     status: smoke.status,
     target,
@@ -488,6 +551,7 @@ export async function install(options = {}) {
     detection,
     workers: Object.keys(workers.workers),
     solLuna,
+    agentKit,
     smoke,
   };
 }
@@ -495,7 +559,7 @@ export async function install(options = {}) {
 export async function runCli(argv = process.argv.slice(2)) {
   const { command, options } = cliParse(argv);
   if (command === "help" || options.help) {
-    process.stdout.write("Usage: node bootstrap.mjs install [options]\n       node bootstrap.mjs detect [options]\n       node bootstrap.mjs smoke --target PATH --config PATH\n\nOptions: --target PATH --config-out PATH --workbuddy-app PATH --workbuddy-cli PATH --workbuddy-config-dir PATH --codebuddy-app PATH --codebuddy-cli PATH --codebuddy-config-dir PATH --node PATH --enable-sol-luna --skip-smoke\n");
+    process.stdout.write("Usage: node bootstrap.mjs install [options]\n       node bootstrap.mjs detect [options]\n       node bootstrap.mjs smoke --target PATH --config PATH\n\nOptions: --target PATH --config-out PATH --workbuddy-app PATH --workbuddy-cli PATH --workbuddy-config-dir PATH --codebuddy-app PATH --codebuddy-cli PATH --codebuddy-config-dir PATH --node PATH --enable-agent-kit --enable-sol-luna --skip-smoke\n");
     return { status: "help" };
   }
   if (command === "detect") {
@@ -515,6 +579,7 @@ export async function runCli(argv = process.argv.slice(2)) {
     nodePath: options.node ?? options.nodePath,
     configPath: options["config-out"],
     enableSolLuna: options["enable-sol-luna"] === true,
+    enableAgentKit: options["enable-agent-kit"] === true,
     skipSmoke: options["skip-smoke"] === true,
     smokeTimeoutMs: options["timeout-ms"] ? Number(options["timeout-ms"]) : undefined,
   });

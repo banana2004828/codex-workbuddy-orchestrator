@@ -9,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, "..");
-const defaultOutput = path.join(repositoryRoot, "dist", "codex-workbuddy-orchestrator-0.1.0.zip");
+const defaultOutput = path.join(repositoryRoot, "dist", "codex-workbuddy-orchestrator-0.2.0.zip");
 
 const EXCLUDED_NAMES = new Set([
   ".git",

@@ -1,6 +1,6 @@
 # Codex WorkBuddy Orchestrator
 
-Portable, local-first distribution of the `workbuddy-orchestrator` Codex skill. Codex remains the planner, safety reviewer, integrator, and final acceptor; WorkBuddy performs only bounded tasks through its headless CodeBuddy CLI.
+Portable, local-first distribution of the `workbuddy-orchestrator` Codex skill. Codex remains the planner, safety reviewer, integrator, and final acceptor; WorkBuddy performs only bounded tasks through its headless CodeBuddy CLI. Version 0.2.0 also includes an optional Sol/Spark/Luna/DeepSeek/WorkBuddy routing kit and a credential-free Qwen vision template for DeepSeek Harness.
 
 ## Installer behavior
 
@@ -11,7 +11,7 @@ Run `node bootstrap.mjs install` from a checkout or extracted ZIP. The installer
 3. Backs up an existing `~/.codex/skills/workbuddy-orchestrator` target and an existing workers config before writing. Generated config contains only executable paths, config directories, model, bounded turns, and tool allowlists.
 4. Creates an isolated smoke workspace, dispatches a real WorkBuddy headless task, polls it, checks exact proof content, validates `result.json`, checks `allowedPaths` with `taskctl validate`, and marks accepted only after all evidence passes. The smoke directory is retained on both success and failure.
 
-TRAE is never enabled. Sol/Luna guidance is copied only with `--enable-sol-luna`; it is an optional fragment and never overwrites an existing `AGENTS.md`. `--skip-smoke` is for offline packaging only and is reported as skipped, never passed.
+TRAE is never enabled. `--enable-agent-kit` installs backed-up `spark_worker` and `luna_worker` templates plus a standalone `multi-agent-router` Skill; it never edits `AGENTS.md`. The older `--enable-sol-luna` flag only copies an optional guidance fragment. `--skip-smoke` is for offline packaging only and is reported as skipped, never passed.
 
 ## Requirements
 
@@ -24,6 +24,21 @@ TRAE is never enabled. Sol/Luna guidance is copied only with `--enable-sol-luna`
 ```sh
 node bootstrap.mjs install
 ```
+
+Install WorkBuddy plus the optional native child-agent router:
+
+```sh
+node bootstrap.mjs install --enable-agent-kit
+```
+
+The agent-kit flag installs these user-scoped components with reversible backups:
+
+- `~/.codex/agents/spark-worker.toml`
+- `~/.codex/agents/luna-worker.toml`
+- `~/.codex/skills/multi-agent-router/`
+- `~/.codex/multi-agent-router.json`
+
+Start a new Codex task after installation so the new agent and Skill catalog is loaded. The default remains `auto`; no child agent starts merely because the files were installed.
 
 Example overrides:
 
@@ -39,8 +54,48 @@ Windows uses the same Node command. Supported environment overrides include `WB_
 ## One-line prompt for a colleague's Codex
 
 ```text
-请让 Codex 从 GitHub 仓库 https://github.com/wjx040828-stack/codex-workbuddy-orchestrator 获取项目，先阅读 README 和 Skill 说明，再运行 `node bootstrap.mjs install`；自动检测已登录 WorkBuddy（若检测到 CodeBuddy 的真实 Node CLI 再启用），把 Skill 安装到 `~/.codex/skills/workbuddy-orchestrator`，完成真实 WorkBuddy proof smoke，并且只有 proof、result.json、allowedPaths、工作区文件审计与 `taskctl validate` 全部独立通过后才报告 accepted，同时保留测试目录路径；遇到登录、权限或检测阻塞时如实停止，不要改用界面手动冒烟。
+请让 Codex 从 GitHub 仓库 https://github.com/wjx040828-stack/codex-workbuddy-orchestrator 获取项目，先阅读 README 和两个 Skill 说明，再运行 `node bootstrap.mjs install --enable-agent-kit`；自动检测已登录 WorkBuddy（若检测到 CodeBuddy 的真实 Node CLI 再启用），安装 WorkBuddy Skill、Spark/Luna 子代理模板和 Multi-Agent Router，完成真实 WorkBuddy proof smoke，并且只有 proof、result.json、allowedPaths、工作区文件审计与 `taskctl validate` 全部独立通过后才报告 accepted；不得读取或输出任何 API Key，不得使用 computer use 代替无头验收，遇到登录、权限、模型或 CLI 阻塞时如实停止。
 ```
+
+## Agent routing
+
+The optional router keeps Sol in control and adds these explicit routes:
+
+| Phrase | Route |
+|---|---|
+| `子代理模式` | auto-select an eligible executor |
+| `Spark 子代理模式` | small isolated coding or focused tests through `spark_worker` |
+| `Luna 子代理模式` | broader bounded work through `luna_worker` |
+| `DeepSeek 子代理模式` | isolated DeepSeek Harness execution |
+| `WorkBuddy 子代理模式` | real WorkBuddy headless task protocol |
+| `这次只用 Sol` | no delegation for this task |
+
+Spark and Luna consume Codex child-agent quota. DeepSeek uses the configured DeepSeek API balance. WorkBuddy uses its current entitlement or credits. Qwen vision uses the configured Qwen provider balance. Do not label any route free without current evidence.
+
+The routing implementation is under `skill/multi-agent-router/`; the reusable native-agent definitions are under `agent-templates/`.
+
+## DeepSeek Harness and Qwen vision
+
+The repository includes [a version-sensitive Qwen child-tool fragment](templates/deepseek-harness/qwen-vision.fragment.yml). It represents the accepted design for an explicit local image path:
+
+```text
+DeepSeek parent
+  -> qwen_vision one-shot child
+  -> Qwen calls read_image on a real local image
+  -> structured text report
+  -> DeepSeek continues
+  -> Sol verifies the result
+```
+
+Before using the fragment:
+
+1. Pin and build a compatible official `deepseek-ai/deepseek-harness` revision.
+2. Configure the DeepSeek and Qwen providers through Harness's credential system; never place keys in this repository or preset YAML.
+3. Copy an existing coding preset and merge the fragment inside its delegation group.
+4. Validate the composed profile before starting a real session.
+5. Run a real PNG test and verify the parent called `qwen_vision`, the child called `read_image`, the report returned, and the parent continued.
+
+The explicit local-path flow was previously accepted on one Windows installation. It is not proof for another Harness revision or computer. The later automatic `Ctrl+V` attachment bridge attempt ended without final acceptance, so this repository intentionally does **not** claim pasted-image routing is installed or working. See [the installed agent-stack boundary](skill/workbuddy-orchestrator/references/agent-stack.md).
 
 ## Repository layout
 
@@ -50,9 +105,12 @@ The reusable skill is under `skill/workbuddy-orchestrator/`:
 - `scripts/taskctl.mjs` implements the file-backed task contract and headless dispatch.
 - `references/` documents the protocol and direct transport boundaries.
 - `assets/sol-luna/AGENTS.optional.md` is opt-in guidance only.
+- `skill/multi-agent-router/` provides the optional cross-platform router Skill.
+- `agent-templates/` contains credential-free Spark and Luna definitions.
+- `templates/deepseek-harness/` contains a review-first Qwen vision fragment.
 
 Run local tests with `npm test`; validate the skill with the skill-creator `quick_validate.py` script. This repository does not commit, push, create a GitHub repository, or include local worker credentials.
 
 ## ZIP distribution
 
-Run `npm run package` to create `dist/codex-workbuddy-orchestrator-0.1.0.zip`. The pure-Node packager excludes `.git`, `node_modules`, `dist`, `.workbuddy-orchestrator`, `.trae-bridge`, `workers.local.json`, logs, test fixtures/output, and existing ZIP files. It writes only repository files and reports the archive SHA-256.
+Run `npm run package` to create `dist/codex-workbuddy-orchestrator-0.2.0.zip`. The pure-Node packager excludes `.git`, `node_modules`, `dist`, `.workbuddy-orchestrator`, `.trae-bridge`, `workers.local.json`, logs, test fixtures/output, and existing ZIP files. It writes only repository files and reports the archive SHA-256.

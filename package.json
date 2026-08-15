@@ -1,9 +1,9 @@
 {
   "name": "codex-workbuddy-orchestrator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
-  "description": "Portable Codex skill and installer for bounded, evidence-checked WorkBuddy dispatch.",
+  "description": "Portable WorkBuddy collaboration, Codex child-agent routing, and evidence-checked agent setup.",
   "engines": {
     "node": ">=20"
   },

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Multi-Agent Router"
+  short_description: "Route Sol, Spark, Luna, DeepSeek, and WorkBuddy"
+  default_prompt: "Use $multi-agent-router in 子代理模式: keep Sol in control, select an eligible executor, label the cost source, and have Sol verify the result."

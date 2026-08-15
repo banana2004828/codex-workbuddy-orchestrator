@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -10,6 +11,7 @@ import {
   detectPrograms,
   evaluateSmokeEvidence,
   install,
+  installAgentKit,
   runSmoke,
   validateNodeVersion,
 } from "../scripts/install.mjs";
@@ -259,4 +261,52 @@ test("completed claims with blockers or unreported workspace files are rejected"
 test("installer uses a compatible current Node executable", () => {
   const result = validateNodeVersion(process.execPath);
   assert.ok(result.major >= 20);
+});
+
+test("optional agent kit installs Spark, Luna, router, and reversible backups", async () => {
+  const root = await fixture("wb-agent-kit-");
+  const home = path.join(root, "home");
+  const agentsDir = path.join(home, ".codex", "agents");
+  const routerConfigPath = path.join(home, ".codex", "multi-agent-router.json");
+  await mkdir(agentsDir, { recursive: true });
+  await writeFile(path.join(agentsDir, "spark-worker.toml"), "old spark\n");
+  await writeFile(routerConfigPath, "{\"defaultMode\":\"sol\"}\n");
+  const result = await installAgentKit({ sourceRoot: repoRoot, home });
+  assert.ok(result.installed.spark.backupPath);
+  assert.equal(await readFile(result.installed.spark.backupPath, "utf8"), "old spark\n");
+  assert.ok(result.configBackupPath);
+  const spark = await readFile(path.join(agentsDir, "spark-worker.toml"), "utf8");
+  const luna = await readFile(path.join(agentsDir, "luna-worker.toml"), "utf8");
+  const router = await readFile(path.join(home, ".codex", "skills", "multi-agent-router", "SKILL.md"), "utf8");
+  const config = JSON.parse(await readFile(routerConfigPath, "utf8"));
+  assert.match(spark, /name = "spark_worker"/);
+  assert.match(luna, /name = "luna_worker"/);
+  assert.match(router, /Spark 子代理模式/);
+  assert.equal(config.defaultMode, "auto");
+  assert.equal(config.spark.agentType, "spark_worker");
+});
+
+test("portable router accepts Spark without persisting a dry run", async () => {
+  const root = await fixture("wb-router-mode-");
+  const configPath = path.join(root, "router.json");
+  await writeFile(configPath, "{\"version\":2,\"defaultMode\":\"auto\"}\n");
+  const script = path.join(repoRoot, "skill", "multi-agent-router", "scripts", "router-mode.mjs");
+  const execution = spawnSync(process.execPath, [script, "--config", configPath, "--mode", "spark"], { encoding: "utf8" });
+  assert.equal(execution.status, 0, execution.stderr);
+  const output = JSON.parse(execution.stdout);
+  assert.equal(output.config.defaultMode, "spark");
+  assert.equal(output.config.spark.agentType, "spark_worker");
+  assert.equal(output.persisted, false);
+  assert.equal(JSON.parse(await readFile(configPath, "utf8")).defaultMode, "auto");
+});
+
+test("Qwen template is credential-free and does not claim pasted-image acceptance", async () => {
+  const fragment = await readFile(path.join(repoRoot, "templates", "deepseek-harness", "qwen-vision.fragment.yml"), "utf8");
+  assert.match(fragment, /toolName: qwen_vision/);
+  assert.match(fragment, /model: qwen3\.7-plus/);
+  assert.match(fragment, /- read_image/);
+  assert.match(fragment, /maxDepth: 1/);
+  assert.doesNotMatch(fragment, /(?:api[_-]?key|token|cookie|password)\s*:/i);
+  assert.doesNotMatch(fragment, /C:\\Users\\|E:\\github|\/Users\//);
+  assert.match(fragment, /does not claim automatic Ctrl\+V attachment routing/);
 });

@@ -1,6 +1,6 @@
 ---
 name: workbuddy-orchestrator
-description: Coordinate bounded, independently verifiable tasks through a signed-in WorkBuddy headless CodeBuddy CLI while Codex retains planning, safety, integration, and final acceptance. Use only when a user explicitly asks to teach, install, migrate to, test, run through, or make a WorkBuddy-usable version.
+description: Coordinate bounded, independently verifiable tasks through a signed-in WorkBuddy headless CodeBuddy CLI while Codex retains planning, safety, integration, and final acceptance. Use only when a user explicitly asks to teach, install, migrate to, test, run through, or make a WorkBuddy-usable version, including installing the optional Sol/Spark/Luna/DeepSeek/WorkBuddy agent stack.
 ---
 
 # WorkBuddy Orchestrator
@@ -18,6 +18,8 @@ Activate the full WorkBuddy loop only when the user explicitly asks to teach/ins
 3. Write a task spec with `title`, `objective`, `acceptanceCriteria`, `allowedPaths`, `forbiddenPaths`, `workingDirectory`, `canUseSubagents`, `maxDelegationDepth`, and `risk`.
 4. Create and dispatch it with `taskctl.mjs`. Read [references/protocol.md](references/protocol.md) before the first task and [references/direct-transport.md](references/direct-transport.md) before the first headless dispatch.
 5. Keep the task workspace isolated. Never let Codex and WorkBuddy edit the same file concurrently. Keep `maxDelegationDepth` at `0` unless the task packet explicitly permits a bounded child.
+
+When installing or explaining the optional multi-agent stack, read [references/agent-stack.md](references/agent-stack.md). Keep Spark and Luna as native Codex child agents, DeepSeek Harness and WorkBuddy as external executors, Qwen as a vision adjunct, and Sol as final acceptor.
 
 Example:
 
