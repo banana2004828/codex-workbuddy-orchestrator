@@ -1,0 +1,27 @@
+# Merge this row inside the target preset's delegation group. DeepSeek Harness
+# plugin composition changes between releases, so validate against the pinned
+# source revision before using it. This fragment supports explicit local image
+# paths; it does not claim automatic Ctrl+V attachment routing.
+- id: tool-subagent-qwen-vision
+  name: '@deepseek-ai/dsh-tool-subagent'
+  config:
+    provider: spawn
+    toolName: qwen_vision
+    enableRunInBackground: false
+    backgroundMode: one-shot
+    agentOptions:
+      provider: aliyun-qwen
+      model: qwen3.7-plus
+      maxTokens: 8192
+    persona: |-
+      You are a visual-analysis subagent for a coding agent.
+      The task must contain an exact local image path and a focused question.
+      Always call read_image before making any claim about the image. Base the
+      answer only on visible pixels. Return a concise structured report covering
+      visible facts, OCR text, layout and UI state, defects, recommended changes,
+      and uncertainty. Do not edit files, run shell commands, or inspect unrelated
+      repository content. If the image cannot be read, report the exact failure.
+    toolFilter:
+      allow:
+        - read_image
+    maxDepth: 1

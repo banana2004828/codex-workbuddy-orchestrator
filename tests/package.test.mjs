@@ -11,6 +11,9 @@ test("package file selection excludes local state, credentials, logs, fixtures, 
   const names = files.map((file) => file.relative);
   assert.ok(names.includes("bootstrap.mjs"));
   assert.ok(names.includes("skill/workbuddy-orchestrator/SKILL.md"));
+  assert.ok(names.includes("skill/multi-agent-router/SKILL.md"));
+  assert.ok(names.includes("agent-templates/spark-worker.toml"));
+  assert.ok(names.includes("templates/deepseek-harness/qwen-vision.fragment.yml"));
   assert.ok(!names.some((name) => name.startsWith(".git/")));
   assert.ok(!names.some((name) => name.includes("workers.local")));
   assert.ok(!names.some((name) => name.endsWith(".log") || name.endsWith(".zip")));
