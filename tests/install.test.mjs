@@ -310,3 +310,18 @@ test("Qwen template is credential-free and does not claim pasted-image acceptanc
   assert.doesNotMatch(fragment, /C:\\Users\\|E:\\github|\/Users\//);
   assert.match(fragment, /does not claim automatic Ctrl\+V attachment routing/);
 });
+
+test("WorkBuddy skill points to the complete Hermes Qwen workflow and preserves paid acceptance boundaries", async () => {
+  const skill = await readFile(path.join(repoRoot, "skill", "workbuddy-orchestrator", "SKILL.md"), "utf8");
+  const reference = await readFile(
+    path.join(repoRoot, "skill", "workbuddy-orchestrator", "references", "qwen-vision-workflow.md"),
+    "utf8",
+  );
+  assert.match(skill, /qwen-vision-workflow\.md/);
+  assert.match(reference, /https:\/\/github\.com\/banana2004828\/qwen-vision-workflow/);
+  assert.match(reference, /安装千问视觉\.cmd/);
+  assert.match(reference, /qvw\.ps1[^\n]+-Action verify/);
+  assert.match(reference, /-ConfirmPaidCalls/);
+  assert.match(reference, /不得[^\n]*(?:API Key|密钥)/);
+  assert.match(reference, /WorkBuddy[^\n]*(?:目标环境验收|真实验收)/);
+});

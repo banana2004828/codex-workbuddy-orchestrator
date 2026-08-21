@@ -19,7 +19,7 @@ Activate the full WorkBuddy loop only when the user explicitly asks to teach/ins
 4. Create and dispatch it with `taskctl.mjs`. Read [references/protocol.md](references/protocol.md) before the first task and [references/direct-transport.md](references/direct-transport.md) before the first headless dispatch.
 5. Keep the task workspace isolated. Never let Codex and WorkBuddy edit the same file concurrently. Keep `maxDelegationDepth` at `0` unless the task packet explicitly permits a bounded child.
 
-When installing or explaining the optional multi-agent stack, read [references/agent-stack.md](references/agent-stack.md). Keep Spark and Luna as native Codex child agents, DeepSeek Harness and WorkBuddy as external executors, Qwen as a vision adjunct, and Sol as final acceptor.
+When installing or explaining the optional multi-agent stack, read [references/agent-stack.md](references/agent-stack.md). Keep Spark and Luna as native Codex child agents, DeepSeek Harness and WorkBuddy as external executors, Qwen as a vision adjunct, and Sol as final acceptor. When the requested WorkBuddy handoff is specifically about installing, repairing, sharing, verifying, or rolling back Qwen vision on Windows Hermes, read [references/qwen-vision-workflow.md](references/qwen-vision-workflow.md) and use its maintained public package instead of reconstructing the older Harness fragment.
 
 Example:
 

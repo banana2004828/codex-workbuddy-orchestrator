@@ -1,6 +1,6 @@
 # Codex WorkBuddy Orchestrator
 
-Portable, local-first distribution of the `workbuddy-orchestrator` Codex skill. Codex remains the planner, safety reviewer, integrator, and final acceptor; WorkBuddy performs only bounded tasks through its headless CodeBuddy CLI. Version 0.2.0 also includes an optional Sol/Spark/Luna/DeepSeek/WorkBuddy routing kit and a credential-free Qwen vision template for DeepSeek Harness.
+Portable, local-first distribution of the `workbuddy-orchestrator` Codex skill. Codex remains the planner, safety reviewer, integrator, and final acceptor; WorkBuddy performs only bounded tasks through its headless CodeBuddy CLI. Version 0.2.0 also includes an optional Sol/Spark/Luna/DeepSeek/WorkBuddy routing kit, a credential-free Qwen vision template for DeepSeek Harness, and a maintained handoff to the complete Windows Hermes Qwen workflow.
 
 ## Installer behavior
 
@@ -54,7 +54,7 @@ Windows uses the same Node command. Supported environment overrides include `WB_
 ## One-line prompt for a colleague's Codex
 
 ```text
-请让 Codex 从 GitHub 仓库 https://github.com/wjx040828-stack/codex-workbuddy-orchestrator 获取项目，先阅读 README 和两个 Skill 说明，再运行 `node bootstrap.mjs install --enable-agent-kit`；自动检测已登录 WorkBuddy（若检测到 CodeBuddy 的真实 Node CLI 再启用），安装 WorkBuddy Skill、Spark/Luna 子代理模板和 Multi-Agent Router，完成真实 WorkBuddy proof smoke，并且只有 proof、result.json、allowedPaths、工作区文件审计与 `taskctl validate` 全部独立通过后才报告 accepted；不得读取或输出任何 API Key，不得使用 computer use 代替无头验收，遇到登录、权限、模型或 CLI 阻塞时如实停止。
+请让 Codex 从 GitHub 仓库 https://github.com/banana2004828/codex-workbuddy-orchestrator 获取项目，先阅读 README 和两个 Skill 说明，再运行 `node bootstrap.mjs install --enable-agent-kit`；自动检测已登录 WorkBuddy（若检测到 CodeBuddy 的真实 Node CLI 再启用），安装 WorkBuddy Skill、Spark/Luna 子代理模板和 Multi-Agent Router，完成真实 WorkBuddy proof smoke，并且只有 proof、result.json、allowedPaths、工作区文件审计与 `taskctl validate` 全部独立通过后才报告 accepted；不得读取或输出任何 API Key，不得使用 computer use 代替无头验收，遇到登录、权限、模型或 CLI 阻塞时如实停止。
 ```
 
 ## Agent routing
@@ -75,6 +75,10 @@ Spark and Luna consume Codex child-agent quota. DeepSeek uses the configured Dee
 The routing implementation is under `skill/multi-agent-router/`; the reusable native-agent definitions are under `agent-templates/`.
 
 ## DeepSeek Harness and Qwen vision
+
+For the complete Windows Hermes path, use [qwen-vision-workflow](https://github.com/banana2004828/qwen-vision-workflow). It provides the one-click CMD entry, machine-readable PowerShell router, protected backups and receipts, verified rollback, optional pinned Qwen-MM support, a version-gated Harness adapter, dual-PowerShell tests, and a deterministic release ZIP. The installed WorkBuddy skill links to the exact handoff and acceptance rules in [qwen-vision-workflow.md](skill/workbuddy-orchestrator/references/qwen-vision-workflow.md).
+
+The workflow is Windows-only. WorkBuddy on macOS can coordinate a bounded handoff, but installation and target acceptance must occur on the intended Windows Hermes machine. Real image verification may consume Qwen/DashScope balance and remains blocked until the user explicitly authorizes `-ConfirmPaidCalls`.
 
 The repository includes [a version-sensitive Qwen child-tool fragment](templates/deepseek-harness/qwen-vision.fragment.yml). It represents the accepted design for an explicit local image path:
 
