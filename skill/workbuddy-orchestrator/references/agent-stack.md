@@ -23,6 +23,8 @@ The router defaults to `auto`. Explicit phrases such as `Spark 子代理模式`,
 
 ## DeepSeek and Qwen boundary
 
+For a maintained Windows Hermes installer, reversible receipts, optional Qwen-MM, and version-gated DeepSeek Harness adapter, use the separate [Qwen vision workflow](qwen-vision-workflow.md). The fragment below remains a review-first Harness template; it is not a substitute for the complete Windows workflow.
+
 The accepted configuration uses a DeepSeek Harness preset exposing a one-shot `qwen_vision` child tool. The tool must receive an exact readable local image path, call `read_image`, return text only, allow no shell or write tools, and use depth `1`.
 
 The historical local-path flow was accepted only after the parent DeepSeek session called `qwen_vision`, Qwen called `read_image` on a real PNG, a structured report returned, and the parent continued. A later automatic `Ctrl+V` attachment bridge attempt did not reach final acceptance. Keep direct paste routing labeled experimental until a fresh target version passes real image evidence.
